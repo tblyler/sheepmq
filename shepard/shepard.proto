@@ -1,0 +1,108 @@
+syntax = "proto3";
+
+package shepard;
+
+service sheepmq {
+	// Add the given items to the queue
+	rpc AddItem(stream Item) returns (stream Response) {}
+
+	// Get the given items per the info provided
+	rpc GetItem(GetInfo) returns (stream Item) {}
+
+	// Delete the given items if possible
+	rpc DelItem(DelInfo) returns (Response) {}
+
+	// Error the given items if possible
+	rpc ErrItem(ErrInfo) returns (Response) {}
+}
+
+message Response {
+	// whether or not the operation was successful
+	bool success = 1;
+
+	// the amount of items affected
+	uint64 count = 2;
+
+	// error message on failure
+	string msg = 3;
+}
+
+message Item {
+	// the id for this item
+	uint64 id = 1;
+
+	// the arbitrary data for this item
+	bytes data = 2;
+
+	// the queue for this item
+	string queue = 3;
+
+	// error queue to cycle items to
+	string errorQueue = 4;
+
+	// error queue TTL in nanoseconds
+	sfixed64 errorTTL = 5;
+
+	// the Unix time (in seconds) in which this item was created
+	sfixed64 ctime = 6;
+
+	// the Unix time (in seconds) in which this item was errored last
+	sfixed64 etime = 7;
+
+	// the amount of times this item was errored
+	uint32 ecount = 8;
+
+	// arbitrary statistical sizes to record for this item
+	map<string, int64> stats = 9;
+
+	// future proof?
+	reserved 10 to 15;
+}
+
+message GetInfo {
+	string queue = 1;
+
+	// the amount of items to try and pull
+	uint64 count = 2;
+
+	TimeLease timeoutLease = 3;
+
+	PidLease pidLease = 4;
+
+	HeartbeatLease heartLease = 5;
+
+	// future proof?
+	reserved 6 to 10;
+}
+
+message TimeLease {
+	// TTL in nanoseconds to hold the lease
+	sfixed64 ttl = 1;
+}
+
+message PidLease {
+	uint32 pid = 1;
+}
+
+message HeartbeatLease {
+	string id = 1;
+	sfixed64 ttl = 2;
+}
+
+message DelInfo {
+	string queue = 1;
+
+	repeated uint64 ids = 2;
+
+	// future proof?
+	reserved 3 to 10;
+}
+
+message ErrInfo {
+	string queue = 1;
+
+	repeated uint64 ids = 2;
+
+	// future proof?
+	reserved 3 to 10;
+}
